@@ -9,7 +9,7 @@
 #include "shader_recompiler/frontend/ampere/program_address_map.h"
 #include "shader_recompiler/frontend/ampere/program_override.h"
 #include "shader_recompiler/program_header.h"
-#include "video_core/mkw_wave_workaround.h"
+#include "video_core/native_dispatch_replaced.h"
 #include "video_core/native_lowering.h"
 
 namespace VideoCommon {
@@ -45,7 +45,6 @@ std::shared_ptr<LoweredNativeCode> MakeLoweredNativeCode(std::span<const Instruc
                                                          u32 header_size,
                                                          std::span<const u32> verified_traps,
                                                          Shader::Ampere::LoweredProgram& lowered) {
-    VideoCommon::ApplyMkwZeroDepthFallback(native, lowered);
     const size_t trap_count =
         verified_traps.empty() ? 0 : verified_traps.back() / sizeof(Instruction) + 1;
     auto result = std::make_shared<LoweredNativeCode>();

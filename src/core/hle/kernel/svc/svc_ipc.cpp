@@ -30,11 +30,7 @@ Result SendSyncRequestImpl(KernelCore& kernel, uintptr_t message, size_t buffer_
     ASSERT(parent.IsNotNull());
 
     // Send the request.
-    const Result result = session->SendSyncRequest(kernel, message, buffer_size);
-    if (R_SUCCEEDED(result)) {
-        GetCurrentThread(kernel).WaitForStartupThreads(kernel);
-    }
-    R_RETURN(result);
+    R_RETURN(session->SendSyncRequest(kernel, message, buffer_size));
 }
 
 Result ReplyAndReceiveImpl(KernelCore& kernel, int32_t* out_index, uintptr_t message,

@@ -16,7 +16,6 @@
 
 #include "shader_recompiler/shader_info.h"
 #include "video_core/renderer_vulkan/vk_compute_pass.h"
-#include "video_core/renderer_vulkan/vk_dlss_network_probe.h"
 #include "video_core/renderer_vulkan/vk_fsr3_upscaler.h"
 #ifdef EGLANTINE_STREAMLINE
 #include "video_core/renderer_vulkan/vk_streamline_dlss.h"
@@ -154,11 +153,6 @@ public:
     /// True while TemporalUpscale would use NVIDIA DLSS (on, Streamline running, not failed).
     [[nodiscard]] bool UsesNvidiaDlss() const;
 
-    /// Records a health check of a game's DLSS network output against its input (both sampled in
-    /// the GENERAL layout) and returns an earlier check's result once the GPU has finished it.
-    [[nodiscard]] std::optional<VideoCore::GameDlssProbe> ProbeGameDlssOutput(ImageView& input,
-                                                                              ImageView& output);
-
     void CopyImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
 
     void CopyImageMSAA(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
@@ -265,8 +259,6 @@ public:
     std::optional<f32> ocarina_fsr_lod_bias;
     /// Set when the Ocarina upscaler fails during the session: samplers drop the bias again.
     bool ocarina_fsr_failed{};
-    /// The game DLSS network's health check (ProbeGameDlssOutput), created on first use.
-    std::unique_ptr<DlssNetworkProbe> dlss_network_probe;
     std::optional<std::chrono::steady_clock::time_point> fsr3_last_evaluation;
 
     /// Draws an upscaler's RGBA16F output into the DLSS output and returns it to GENERAL.

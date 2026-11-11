@@ -24,16 +24,13 @@ EDEN_NX2_FENCE_BATCH=1
 # Which fence the game waits for when it presents. 1 = the previous frame's: the game prepares the
 # next frame while the GPU finishes this one, and waits for this one too while the GPU is behind.
 # 0 = this frame's: no overlap. Any value other than 1 means 0, so =2 does not run two frames ahead.
-# Unset: per title. Ocarina of Time uses 1, Donkey Kong Bananza 0, and other titles wait for this
-# frame unless a GPU channel waits on a semaphore the game releases after the present.
+# Unset: per title. Ocarina of Time uses 1; other titles wait for this frame unless a GPU channel
+# waits on a semaphore the game releases after the present.
 # Ocarina of Time with =0 (or =2): 30.9 fps against 38.9 unset, same spot and settings.
 #EDEN_NX2_FRAMES_AHEAD=1
 
 # --- Workarounds / Debug ---
-# Terrain/indirect drawing fix for Donkey Kong Bananza: enabled by default. Set to 0 only to leave to GPU.
-#EDEN_NX2_RESETFIX=0
-
-# Drop reactive-flushing read traps on Switch 2 programs (opt-in; can reduce FPS from 29 to 24 in MKW).
+# Drop reactive-flushing read traps on Switch 2 programs (opt-in; can reduce frame time).
 #EDEN_NX2_NO_REACTIVE=1
 
 #EDEN_NX2_MME_JIT=0

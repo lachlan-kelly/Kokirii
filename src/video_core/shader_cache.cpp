@@ -25,8 +25,7 @@
 #include "video_core/control/channel_state.h"
 #include "video_core/dirty_flags.h"
 #include "video_core/nx2_fast_draw.h"
-#include "video_core/dlss_contract.h"
-#include "video_core/fire_emblem_upscale.h"
+#include "video_core/native_dispatch_replaced.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
@@ -299,17 +298,8 @@ const ShaderInfo* ShaderCache::ComputeShader() {
     // Check both warm and cold shader paths, before selecting a disk-cached pipeline.
     // EDEN_NX2_DLSS_REPLACEMENT=native retains the native network for comparisons.
     if (kepler_compute->IsNativeMode() && shader->lowered_native &&
-        DlssContract::IsFastFusionCandidate(program_id,
-                                            shader->lowered_native->native_program_key)) {
-        kepler_compute->TraceDlssContract(shader->lowered_native->native_program_key);
-    }
-    if (kepler_compute->IsNativeMode() && shader->lowered_native &&
         kepler_compute->BypassOotNetwork(program_id, shader->lowered_native->native_program_key)) {
-        throw FireEmblemUpscale::DispatchReplaced{};
-    }
-    if (kepler_compute->IsNativeMode() && shader->lowered_native &&
-        kepler_compute->ProcessGameDlss(program_id, shader->lowered_native->native_program_key)) {
-        throw FireEmblemUpscale::DispatchReplaced{};
+        throw VideoCommon::DispatchReplaced{};
     }
     return shader;
 }

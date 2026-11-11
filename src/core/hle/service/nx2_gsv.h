@@ -28,11 +28,9 @@
 #include "common/alignment.h"
 #include "common/div_ceil.h"
 #include "common/dkb_frame_trace.h"
-#include "common/game_presets.h"
 #include "common/settings.h"
 #include "common/thread.h"
 #include "core/core.h"
-#include "core/arm/dynarmic/window_trace.h"
 #include "core/device_memory.h"
 #include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_base.h"
@@ -1842,17 +1840,11 @@ private:
             const char* value = std::getenv("EDEN_NX2_FRAMES_AHEAD");
             return value == nullptr ? -1 : value[0] == '1' ? 1 : 0;
         }();
-        // Donkey Kong Bananza's channels wait on each other every frame, so it always ran a frame
-        // ahead, where it rewrote memory the GPU thread hadn't read yet (misread commands, then
-        // a freeze or crash; rubberbanding while moving). Title 1 runs ahead without either.
-        constexpr u64 DonkeyKongBananzaProgramId = 0x040074A01BF12000ULL;
         // Ocarina waited ~12 ms a frame on its previous frame's fence here (#161).
         constexpr u64 OcarinaOfTimeProgramId = 0x0400486024DEC000ULL;
         int frames_ahead = frames_ahead_setting;
         const u64 app_program_id = system.GetApplicationProcessProgramID();
-        if (frames_ahead == -1 && app_program_id == DonkeyKongBananzaProgramId) {
-            frames_ahead = 0;
-        } else if (frames_ahead == -1 && app_program_id == OcarinaOfTimeProgramId) {
+        if (frames_ahead == -1 && app_program_id == OcarinaOfTimeProgramId) {
             frames_ahead = 1;
         }
         const auto entered = std::chrono::steady_clock::now();
@@ -1882,7 +1874,7 @@ private:
         const auto waited = std::chrono::steady_clock::now();
         Composite(w[5], ~w[22], w[24], w[7]);
         const auto composited = std::chrono::steady_clock::now();
-        PaceToVblank(w[12], ctx.GetThread().GetOwnerProcess());
+        PaceToVblank(w[12]);
         const auto paced = std::chrono::steady_clock::now();
         if (Common::DkbFrameTrace::Enabled()) {
             const auto ms = [](auto duration) {
@@ -1991,9 +1983,8 @@ private:
      * EDEN_NX2_SWAP_INTERVAL=<n> forces the interval.
      *
      * @param timing  Present word 12: (swap interval << 16) | refresh rate.
-     * @param process Owning process, for the Mario Kart World dynamic FPS case; may be null.
      */
-    void PaceToVblank(u32 timing, const Kernel::KProcess* process) {
+    void PaceToVblank(u32 timing) {
         const bool trace = Common::DkbFrameTrace::Enabled();
         if (trace) {
             if (m_frame_trace.previous_word && *m_frame_trace.previous_word != timing) {
@@ -2011,13 +2002,7 @@ private:
             const char* value = std::getenv("EDEN_NX2_SWAP_INTERVAL");
             return value ? static_cast<u32>(std::strtoul(value, nullptr, 10)) : 0U;
         }();
-        const bool mkw_dynamic =
-            process != nullptr && process->GetProgramId() == Settings::MarioKartWorldProgramId &&
-            process->IsMkwDynamicFpsPatchApplied() && Settings::values.mkw_dynamic_fps.GetValue();
         u32 swap_interval = std::clamp<u32>(timing >> 16, 1, 4);
-        if (mkw_dynamic) {
-            swap_interval = 1;
-        }
         if (forced_interval != 0) {
             swap_interval = forced_interval;
         }
@@ -2219,12 +2204,6 @@ private:
         if (!Settings::IsDockedMode()) {
             crop_width = (std::min)(crop_width, 1920U);
             crop_height = (std::min)(crop_height, 1080U);
-        } else if (!has_shown_size &&
-                   system.GetApplicationProcessProgramID() == 0x0400C3F00006E000ULL &&
-                   layout.width == 3840 && layout.height == 2160) {
-            // Mario Kart World docked draws 2560x1440 into the top-left of its 4K images.
-            crop_width = 2560;
-            crop_height = 1440;
         }
         static const u32 env_crop_w = [] {
             const char* v = std::getenv("EDEN_NX2_CROP_WIDTH");
@@ -2852,20 +2831,16 @@ private:
             if (release_fence) {
                 m_release_fences[image] = *release_fence;
             }
-            // Mario Kart World waits for returned images after a movie and acquires a frame for
-            // each completed fence, so its released images need synthetic end-of-stream frames.
+            // EDEN_NX2_VDEC_EOS_RELEASE_NOW: hand released images back as synthetic
+            // end-of-stream frames once the movie has ended and drained.
             static const bool release_now = [] {
                 const char* env_value = std::getenv("EDEN_NX2_VDEC_EOS_RELEASE_NOW");
                 return env_value != nullptr && env_value[0] != '0';
             }();
-            const bool drain_eos =
-                system.GetApplicationProcessProgramID() == Settings::MarioKartWorldProgramId;
-            if ((drain_eos || release_now) && release_fence && m_stream_ended && m_inputs.Empty() &&
+            if (release_now && release_fence && m_stream_ended && m_inputs.Empty() &&
                 m_decoded.empty()) {
-                const u32 reached =
-                    drain_eos ? DrainFreeAsEndOfStream()
-                              : static_cast<u32>(system.Host1x().GetSyncpointManager()
-                                                     .GetGuestSyncpointValue(m_syncpoint));
+                const u32 reached = static_cast<u32>(system.Host1x().GetSyncpointManager()
+                                                        .GetGuestSyncpointValue(m_syncpoint));
                 m_sync_base = reached;
                 m_handed = 0;
                 value = reached;
@@ -3153,10 +3128,6 @@ private:
                 }
                 system.Host1x().GetSyncpointManager().IncrementGuest(m_syncpoint);
                 m_last_output = m_outputs.back();
-                if (frame.end && m_inputs.Empty() && m_decoded.empty() &&
-                    system.GetApplicationProcessProgramID() == Settings::MarioKartWorldProgramId) {
-                    DrainFreeAsEndOfStream();
-                }
                 ++m_frames_out;
                 const s64 written_us = HostTimeUs();
                 if (!m_stream_start) {
@@ -3241,22 +3212,6 @@ private:
                 }
             }
         }
-    }
-
-    u32 DrainFreeAsEndOfStream() {
-        auto& syncpoints = system.Host1x().GetSyncpointManager();
-        if (Nx2VideoTraceEnabled()) {
-            LOG_INFO(Service, "nx2:vdec trace synthetic EOS syncpoint={} images={}",
-                     m_syncpoint, m_free.size());
-        }
-        while (!m_free.empty()) {
-            const u32 image = m_free.front();
-            m_free.pop_front();
-            m_release_fences.erase(image);
-            m_outputs.push_back({image, m_last_output.width, m_last_output.height, m_last_output.pts, true});
-            syncpoints.IncrementGuest(m_syncpoint);
-        }
-        return static_cast<u32>(syncpoints.GetGuestSyncpointValue(m_syncpoint));
     }
 
     // Waits (bounded) until the client's reads of an image it gave back have passed.
@@ -3833,15 +3788,6 @@ private:
         const auto* w = ctx.CommandBuffer();
         const auto layout = Nx2CalculateNativeImageRequirements(
             std::span<const u32, 16>{w + 2, 16}, w[18]);
-        const auto trace = Core::WindowTrace::Enabled()
-                               ? Core::WindowTrace::sessions.Find(ctx.GetThread().GetOwnerProcess())
-                               : nullptr;
-        if (trace && trace->TakeGsvLog()) {
-            LOG_INFO(Service, "Star Fox gsv 1510: session={} tls={:#x} kind={} {}x{} raw_block={} raw_pitch_gobs={} format={} block_format_and_luminance={:#x} count={} -> pitch={:#x} block_rows_log2={} size={:#x} alignment={:#x}",
-                     trace->id, GetInteger(ctx.GetThread().GetTlsAddress()), w[3], layout.width, layout.height,
-                     w[6], w[7], w[8], w[9], w[18],
-                     layout.pitch, layout.block_height_log2, layout.size, layout.alignment);
-        }
         LOG_DEBUG(Service, "nx2:gsv 1510 kind={} {}x{} block={} pitch={:#x} format={} -> size={:#x} align={:#x}",
                   w[3], layout.width, layout.height, layout.block_height_log2, layout.pitch, w[8],
                   layout.size, layout.alignment);

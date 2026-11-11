@@ -151,12 +151,6 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
               "Higher resolutions require more VRAM and bandwidth.\n"
               "Options lower than 1X can cause artifacts."));
     INSERT(Settings, scaling_filter, tr("Window Adapting Filter:"), QString());
-    INSERT(Settings, game_dlss_network, tr("Use the game's own DLSS"),
-           tr("Runs a Switch 2 game's own DLSS (its upscaling network, translated for this GPU) "
-              "instead of AMD FSR 3.1 in its place.\nAMD FSR 3.1 still draws while the network is "
-              "checked, when it can't run on this GPU, with resolution scaling, and for the rest "
-              "of the session if its output fails Lichii's checks.\nTakes effect when a game "
-              "starts."));
     INSERT(Settings, frame_rate_limit, tr("Frame rate limit (Switch 2):"),
            tr("Rate of the Switch 2 VSync event that games start their frames on (default 60 Hz)."
               "\nAbove 60 Hz most games run too fast; use it with a game patch that follows real "
@@ -180,10 +174,8 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
            tr("Uses NVIDIA DLSS on GeForce RTX cards in place of a Switch 2 game's own DLSS, "
               "instead of AMD FSR 3.1.\nNeeds NVIDIA's Streamline loader, and NVIDIA DLSS unless "
               "the NVIDIA app has downloaded it; Lichii does not ship NVIDIA's files. Use the "
-              "download button below.\nFire Emblem: Fortune's Weave also needs "
-              "EDEN_NX2_DLSS_REPLACEMENT=dlss. Without that override, its spatial workaround "
-              "remains active.\nIn The Legend of Zelda: Ocarina of Time it replaces the game's "
-              "upscaler at 1x resolution scale.\nThe window adapting filter (the FSR 1, Bilinear "
+              "download button below.\nIn The Legend of Zelda: Ocarina of Time it replaces the "
+              "game's upscaler at 1x resolution scale.\nThe window adapting filter (the FSR 1, Bilinear "
               "and similar button in the status bar) is separate and runs after DLSS. While DLSS "
               "runs, the status bar shows DLSS, its mode and its preset. If DLSS fails, it stays "
               "off until the game restarts and the log says why.\nTakes effect when a game "
@@ -372,13 +364,6 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
     INSERT(Settings, use_video_framerate, tr("Sync to framerate of video playback"),
            tr("Run the game at normal speed during video playback, even when the framerate is "
               "unlocked."));
-    INSERT(Settings, mkw_30fps, tr("Mario Kart World: 30 FPS mode"),
-           tr("Forces the game to use its native 30 FPS mode at normal game speed. "
-              "Takes effect after restarting the game."));
-    INSERT(Settings, mkw_dynamic_fps, tr("Mario Kart World: dynamic FPS (experimental)"),
-           tr("Lets the game adjust between 30 and 60 FPS using whole-frame timing to maintain "
-              "normal game speed. Takes effect after restarting the game and takes precedence over "
-              "the 30 FPS mode."));
     INSERT(Settings, barrier_feedback_loops, tr("Barrier feedback loops"),
            tr("Improves rendering of transparency effects in specific games."));
     INSERT(Settings, enable_buffer_history, tr("Enable buffer history"),

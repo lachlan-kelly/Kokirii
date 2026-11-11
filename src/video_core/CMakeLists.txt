@@ -66,8 +66,6 @@ add_library(video_core STATIC
     fsr.cpp
     fsr.h
     fsr4_support.h
-    game_dlss_status.cpp
-    game_dlss_status.h
     host1x/codecs/decoder.cpp
     host1x/codecs/decoder.h
     host1x/codecs/h264.cpp
@@ -205,8 +203,6 @@ add_library(video_core STATIC
     vulkan_common/ffx_files.h
     vulkan_common/ffx_runtime.cpp
     vulkan_common/ffx_runtime.h
-    renderer_vulkan/vk_dlss_network_probe.cpp
-    renderer_vulkan/vk_dlss_network_probe.h
     renderer_vulkan/vk_ocarina_camera_motion.cpp
     renderer_vulkan/vk_ocarina_camera_motion.h
     renderer_vulkan/vk_compute_pipeline.cpp
@@ -520,7 +516,7 @@ target_link_libraries(video_core PRIVATE xxhash)
 cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH lowering_source_dir)
 file(GLOB_RECURSE lowering_sources CONFIGURE_DEPENDS RELATIVE "${lowering_source_dir}"
      "${lowering_source_dir}/shader_recompiler/frontend/ampere/*")
-list(APPEND lowering_sources video_core/mkw_wave_workaround.h video_core/native_lowering.cpp
+list(APPEND lowering_sources video_core/native_lowering.cpp
      video_core/native_lowering.h)
 list(SORT lowering_sources)
 list(TRANSFORM lowering_sources PREPEND "${lowering_source_dir}/" OUTPUT_VARIABLE lowering_inputs)

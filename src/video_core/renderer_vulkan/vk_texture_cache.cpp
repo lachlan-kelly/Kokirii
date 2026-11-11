@@ -1843,16 +1843,6 @@ bool TextureCacheRuntime::UsesNvidiaDlss() const {
 #endif
 }
 
-std::optional<VideoCore::GameDlssProbe> TextureCacheRuntime::ProbeGameDlssOutput(
-    ImageView& input, ImageView& output) {
-    if (!dlss_network_probe) {
-        dlss_network_probe = std::make_unique<DlssNetworkProbe>(
-            device, scheduler, descriptor_pool, compute_pass_descriptor_queue, memory_allocator);
-    }
-    return dlss_network_probe->Probe(input.Handle(Shader::TextureType::Color2D),
-                                     output.Handle(Shader::TextureType::Color2D));
-}
-
 bool TextureCacheRuntime::UpscaleWithFsr3(Framebuffer* dst_framebuffer, ImageView& input_color,
                                           ImageView& motion_vectors, ImageView& depth,
                                           std::array<u32, 2> render_size,

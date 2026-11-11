@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: Copyright 2026 Kokirii Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
@@ -9,28 +10,13 @@
 
 namespace VideoCommon::DlssContract {
 
+// Validation helpers for the temporal-upscale (FSR/DLSS replacement) input and output images.
 constexpr bool ValidColorFormats(VideoCore::Surface::PixelFormat input,
                                   VideoCore::Surface::PixelFormat output, bool use_history) {
     using VideoCore::Surface::PixelFormat;
     return (input == PixelFormat::B10G11R11_FLOAT && output == input) ||
            (!use_history && input == PixelFormat::A8B8G8R8_SRGB &&
             output == PixelFormat::R16G16B16A16_FLOAT);
-}
-
-constexpr std::uint64_t FastFusionProgramId = 0x040041E0212AE000ULL;
-constexpr std::array FastFusionCandidates{0xb8ed9b1cd5c24e6dULL, 0x7f0f03c0529ca569ULL,
-                                          0x7a06618494a29bcdULL};
-
-constexpr bool IsFastFusionCandidate(std::uint64_t title, std::uint64_t shader) {
-    if (title != FastFusionProgramId) {
-        return false;
-    }
-    for (const auto candidate : FastFusionCandidates) {
-        if (candidate == shader) {
-            return true;
-        }
-    }
-    return false;
 }
 
 constexpr bool FitsExtent(std::array<std::uint32_t, 2> requested,

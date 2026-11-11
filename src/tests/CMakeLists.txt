@@ -165,7 +165,6 @@ add_executable(tests
     common/unique_function.cpp
     common/zstd_compression.cpp
     core/core_timing.cpp
-    core/thread_startup_policy.cpp
     core/nup_writer.cpp
     core/nup_metadata.cpp
     core/nup_read_bench.cpp
@@ -220,7 +219,6 @@ target_link_libraries(tests PRIVATE common core audio_core input_common video_co
 target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} Catch2::Catch2WithMain Threads::Threads)
 
 if (TARGET dynarmic::dynarmic)
-    target_sources(tests PRIVATE core/window_trace.cpp)
     target_link_libraries(tests PRIVATE dynarmic::dynarmic)
 endif()
 

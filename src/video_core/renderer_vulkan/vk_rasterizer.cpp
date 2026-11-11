@@ -37,7 +37,6 @@
 #include "video_core/gpu_logging/gpu_logging.h"
 #include "video_core/control/channel_state.h"
 #include "video_core/native_query_trace.h"
-#include "video_core/native_indirect_reset.h"
 #include "video_core/render_trace.h"
 #include "video_core/indirect_reset.h"
 #include "video_core/engines/maxwell_3d.h"
@@ -677,93 +676,6 @@ void RasterizerVulkan::ReportFastDraws() {
     stats = FastDrawStats{.window_start = now};
 }
 
-// Experimental adaptation of PokeDinner commit 76df4591a747: execute the reset shader's
-// indirect record writes on the host until general GPU-address translation is available.
-bool RasterizerVulkan::TryNx2IndirectReset(bool is_indexed, u32 instance_count) {
-    static const bool enabled = [] {
-        const char* value = std::getenv("EDEN_NX2_RESETFIX");
-        return !value || std::string_view{value} != "0";
-    }();
-    const auto& regs = maxwell3d->regs;
-    const auto& draw = maxwell3d->draw_manager.draw_state;
-    if (!enabled || is_indexed || instance_count != 1 || regs.IsMeshEnabled() ||
-        draw.topology != Maxwell::PrimitiveTopology::Points ||
-        !maxwell3d->GetNativeMacroEngine().native_turing) {
-        return false;
-    }
-    const GPUVAddr program =
-        (u64{regs.pipelines[1].reserved[0] & 0xff} << 32) | regs.pipelines[1].reserved[1];
-    std::array<u32, VideoCommon::NativeIndirectReset::Program.size()> code{};
-    if (!gpu_memory->IsFullyMappedRange(program + 128, sizeof(code))) {
-        return false;
-    }
-    gpu_memory->ReadBlock(program + 128, code.data(), sizeof(code));
-    if (!VideoCommon::NativeIndirectReset::Matches(code)) {
-        return false;
-    }
-    VideoCommon::Nx2FastDraw::Break(VideoCommon::Nx2FastDraw::Reason::IndirectReset);
-    FlushWork();
-    gpu_memory->FlushCaching();
-    const auto reject = [](std::string_view reason) {
-        static u32 reported_rejections{};
-        if (reported_rejections++ < 8) {
-            LOG_WARNING(HW_GPU, "Experimental indirect reset skipped: {}", reason);
-        }
-        return false;
-    };
-    const auto in_gpu_range = [this](u64 address, size_t size) {
-        return size != 0 && address <= (std::numeric_limits<u64>::max)() - size &&
-               gpu_memory->IsWithinGPUAddressRange(address) &&
-               gpu_memory->IsWithinGPUAddressRange(address + size - 1);
-    };
-    const auto& cbuf = maxwell3d->state.shader_stages[0].const_buffers[0];
-    if (!cbuf.enabled || cbuf.size < 0x120 || !in_gpu_range(cbuf.address, 0x120) ||
-        !gpu_memory->IsFullyMappedRange(cbuf.address + 0x110, 16)) {
-        return reject("descriptor unavailable");
-    }
-    std::array<u64, 2> descriptor{};
-    gpu_memory->ReadBlock(cbuf.address + 0x110, descriptor.data(), sizeof(descriptor));
-    const u64 list = descriptor[0];
-    const u64 first = draw.vertex_buffer.first;
-    const u64 count = draw.vertex_buffer.count;
-    const auto range = VideoCommon::IndirectResetRange(list, static_cast<u32>(descriptor[1]),
-                                                        first, count);
-    if (!range || !in_gpu_range(range->begin, range->size) ||
-        !gpu_memory->IsFullyMappedRange(range->begin, range->size)) {
-        return reject("list outside mapped descriptor");
-    }
-    std::vector<u64> pointers(count);
-    gpu_memory->ReadBlock(range->begin, pointers.data(), range->size);
-    static constexpr std::array<u32, 5> record{0, 1, 0, 0, 0};
-    for (const u64 pointer : pointers) {
-        if (!pointer) {
-            return reject("record is null");
-        }
-        if (!in_gpu_range(pointer, sizeof(record)) ||
-            !gpu_memory->IsFullyMappedRange(pointer, sizeof(record))) {
-            return reject("record not mapped");
-        }
-        if (pointer < range->begin + range->size && range->begin < pointer + sizeof(record)) {
-            return reject("record overlaps pointer list");
-        }
-        const auto segments = gpu_memory->GetSubmappedRange(pointer, sizeof(record));
-        if (segments.size() != 1 || segments[0].first != pointer ||
-            segments[0].second != sizeof(record)) {
-            return reject("record crosses a mapping boundary");
-        }
-    }
-    const std::span<const u8> bytes{reinterpret_cast<const u8*>(record.data()), sizeof(record)};
-    for (const u64 pointer : pointers) {
-        AccelerateInlineToMemory(pointer, bytes.size(), bytes);
-    }
-    static u32 reported{};
-    if (reported++ < 5) {
-        LOG_INFO(HW_GPU, "Experimental indirect reset: {} records", count);
-    }
-    gpu.TickWork();
-    return true;
-}
-
 template <typename Func>
 void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func, bool is_indirect) {
 
@@ -1305,9 +1217,6 @@ void RasterizerVulkan::Draw(bool is_indexed, u32 instance_count) {
             }
             return;
         }
-    }
-    if (TryNx2IndirectReset(is_indexed, instance_count)) {
-        return;
     }
     TraceWindowTarget(*maxwell3d, *gpu_memory, is_indexed ? "draw-indexed" : "draw",
                       is_indexed ? maxwell3d->draw_manager.draw_state.index_buffer.count
@@ -3352,17 +3261,6 @@ bool RasterizerVulkan::AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surf
 
 bool RasterizerVulkan::UsesNvidiaDlss() const {
     return texture_cache_runtime.UsesNvidiaDlss();
-}
-
-bool RasterizerVulkan::SupportsGameDlssNetwork() const {
-    // Compute pipelines are created 32 threads wide where the device can be told to.
-    return device.IsGuestWarpSizeSupported(VK_SHADER_STAGE_COMPUTE_BIT);
-}
-
-std::optional<VideoCore::GameDlssProbe> RasterizerVulkan::ProbeGameDlssOutput(
-    const Tegra::Engines::Fermi2D::Surface& src, const Tegra::Engines::Fermi2D::Surface& dst) {
-    std::scoped_lock lock{texture_cache.mutex};
-    return texture_cache.ProbeGameDlssOutput(dst, src);
 }
 
 bool RasterizerVulkan::AccelerateTemporalUpscale(
