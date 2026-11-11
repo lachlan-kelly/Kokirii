@@ -5,8 +5,8 @@
 # SPDX-FileCopyrightText: 2018 yuzu Emulator Project
 # SPDX-License-Identifier: GPL-2.0-or-later
 -->
-# Kokiri
+# Kokirii
 
-Kokiri is an open-source NX2 Emulator designed for the Ocarina of Time Remake forked from Lichii which is a NX2 emulator written in C++ that builds on previous emulators like Eglantine, Eden, yuzu and Sudachi.
+Kokirii is an open-source NX2 Emulator designed for the Ocarina of Time Remake forked from Lichii which is a NX2 emulator written in C++ that builds on previous emulators like Eglantine, Eden, yuzu and Sudachi.
 
-Neither Kokiri or upstream lichii are affiliated with Nintendo
+Neither Kokirii or upstream lichii are affiliated with Nintendo
