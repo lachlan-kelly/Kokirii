@@ -166,38 +166,13 @@ std::string NormalizeGameSlug(std::string title) {
 
 std::string ResolveGameNameAlias(const std::string& raw_name, u64 title_id) {
     static const std::unordered_map<u64, std::string> by_title_id{
-        {0x0400C3F00006E000ULL, "Mario Kart World"},
-        {0x0100000000010000ULL, "Super Mario Odyssey"},
-        {0x0100152000022000ULL, "Mario Kart 8 Deluxe"},
-        {0x01007EF00011E000ULL, "The Legend of Zelda: Breath of the Wild"},
-        {0x0100F2C0115B6000ULL, "The Legend of Zelda: Tears of the Kingdom"},
-        {0x01006A800016E000ULL, "Super Smash Bros. Ultimate"},
-        {0x01006F8002326000ULL, "Animal Crossing: New Horizons"},
+        {0x0400486024DEC000ULL, "The Legend of Zelda: Ocarina of Time"},
     };
     static const std::unordered_map<std::string, std::string> by_alias{
-        {"mkw", "Mario Kart World"},
-        {"mariokartworld", "Mario Kart World"},
-        {"mario-kart-world", "Mario Kart World"},
-        {"dkb", "Donkey Kong Bananza"},
-        {"donkeykongbananza", "Donkey Kong Bananza"},
-        {"kar", "Kirby Air Riders"},
-        {"kirbyairriders", "Kirby Air Riders"},
-        {"mp4", "Metroid Prime 4: Beyond"},
-        {"metroidprime4", "Metroid Prime 4: Beyond"},
-        {"plza", "Pokemon Legends: Z-A"},
-        {"pokemonlegendsza", "Pokemon Legends: Z-A"},
-        {"mk8", "Mario Kart 8 Deluxe"},
-        {"mk8d", "Mario Kart 8 Deluxe"},
-        {"smo", "Super Mario Odyssey"},
-        {"botw", "The Legend of Zelda: Breath of the Wild"},
-        {"totk", "The Legend of Zelda: Tears of the Kingdom"},
-        {"ssbu", "Super Smash Bros. Ultimate"},
-        {"acnh", "Animal Crossing: New Horizons"},
-        {"smbw", "Super Mario Bros. Wonder"},
-        {"splatoon3", "Splatoon 3"},
-        {"xc3", "Xenoblade Chronicles 3"},
-        {"lm3", "Luigi's Mansion 3"},
-        {"pikmin4", "Pikmin 4"},
+        {"oot", "The Legend of Zelda: Ocarina of Time"},
+        {"zeldaoot", "The Legend of Zelda: Ocarina of Time"},
+        {"ocarinaoftime", "The Legend of Zelda: Ocarina of Time"},
+        {"ocarina-of-time", "The Legend of Zelda: Ocarina of Time"},
     };
     const std::string slug = NormalizeGameSlug(raw_name);
     if (const auto it = by_alias.find(slug); it != by_alias.end()) {

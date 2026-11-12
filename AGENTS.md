@@ -6,30 +6,11 @@ Keep comments to a reasonable level. Do not overexplain or add/remove comments f
 
 ## Game bug reports
 
-Users report game bugs with Lichii logs (`eden_log.txt`, `eden_log.txt.old`). Each `Booting game: <program id>` line starts a session; the build is on the first line (`Lichii Version: ... | nx2-<sha>`). Known program ids:
+Users report game bugs with Kokirii logs (`eden_log.txt`, `eden_log.txt.old`). Each `Booting game: <program id>` line starts a session; the build is on the first line (`Kokirii Version: ... | nx2-<sha>`). Known program ids:
 
 | Program id | Game |
 |---|---|
-| 040074A01BF12000 | Donkey Kong Bananza |
-| 040077201BE50000 | Kirby Air Riders |
-| 04007C6028AA8000 | Yoshi and the Mysterious Book (demo) |
-| 0400D4201C6EA000 | Mario Tennis Fever |
-| 0400E88025B1A000 | Star Fox |
-| 04007EF01F8AE000 | Fire Emblem: Fortune's Weave |
-| 0400C3F00006E000 | Mario Kart World |
-| 04008E001F098000 | Nintendo Switch Sports Resort |
-| 0400A3A01EE4C000 | Pokémon Pokopia |
-| 0400A4802437E000 | Drag x Drive Global Jam |
-| 040041E0212AE000 | Fast Fusion |
-| 04005B902517C000 | Kirby Air Riders Global Test Ride |
-| 040057C02159A000 | Nintendo Switch 2 Welcome Tour |
-| 040004F027560000 | Orbitals Global Friends Pass |
-| 0400380020056000 | Raiders |
-| 0400D1D02399A000 | The Duskbloods network test |
 | 0400486024DEC000 | The Legend of Zelda: Ocarina of Time |
-| 0400245021D2C000 | Yoshi and the Mysterious Book |
-| 0400DDB020648000 | Cyberpunk 2077: Ultimate Edition |
-| 0100606026F12000 | Final Fantasy Resonance |
 
 Add ids here when a report identifies a new game.
 

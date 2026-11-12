@@ -291,7 +291,9 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
               "most GPUs."));
     INSERT(Settings, gpu_accuracy, tr("GPU Mode:"),
            tr("Controls the GPU emulation mode.\nMost games render fine with Fast, but Accurate is still "
-              "required for some.\nParticles tend to only render correctly with Accurate mode."));
+              "required for some.\nParticles tend to only render correctly with Accurate mode.\n"
+              "Note: Accurate disables the split GPU thread and runs all GPU work on one thread, "
+              "which costs a lot of performance."));
     INSERT(Settings, dma_accuracy, tr("DMA Accuracy:"),
            tr("Controls the DMA read mode.\nUnsafe is faster, while Safe is more stable and can fix issues in some games.\nDefault follows the GPU Accuracy setting."));
     INSERT(Settings, gpu_fence_behavior, tr("GPU Fence Behavior:"),
