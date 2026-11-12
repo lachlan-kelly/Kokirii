@@ -41,6 +41,12 @@ Everything below was verified against our tree line by line.
   reference for what upstream looks like un-culled.
 - `b061ce928c` "Baseline: Lichii nx2 tree before Kokirii cull/rebrand" — kept as a reference
   point; diff against it to see everything Kokirii removed.
+- **Build branch:** `origin/nx2-experimental`. This machine has no toolchain, so producing exe
+  builds means pushing `master` to that branch: every push there auto-triggers the
+  `release-binaries` workflow, which builds all platforms on GitHub runners and publishes a
+  pre-release (`build-<run number>` tag) with `lichii-windows-x86_64.zip` (extract → run
+  `lichii.exe`). Public repo = free Actions minutes. First run of a fork has cold caches, so
+  expect ~90–120 min. The release title says "Lichii" until the rebrand (§5.1) renames it.
 - The repo still has remotes `origin` (this fork) and possibly `upstream` (Eglantine). Before
   porting any fix, follow the AGENTS.md protocol: check upstream PRs/issues first, merge
   upstream if behind, port before writing new.
@@ -247,3 +253,7 @@ pipe PowerShell scripts from stdin — write script files only.
   identity make the recovery path obvious ("GPU Mode: → Accurate").
 - `beta` still contains un-culled upstream code; accidental work on `beta` would resurrect
   culled content. Always confirm `git rev-parse --abbrev-ref HEAD` says `master`.
+- The culled tree had never been compiled when v0.1.0 shipped (build-check CI only runs on
+  `nx2`). The first `nx2-experimental` push (v0.1.0) is its first real compile check — if it
+  fails, read the log, fix, re-push; the handoff §4 cull contract is grep-verified but
+  compilation is the final word.
